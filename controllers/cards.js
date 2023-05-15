@@ -34,7 +34,7 @@ const deleteCard = (req, res) => {
         res.status(404).send({ message: 'Карточка не найдена' });
         return
       }
-      res.status(INTERNAL_SERVER_ERROR).send({ message: 'Ошибка сервера' });
+      res.status(500).send({ message: 'Ошибка сервера' });
     });
 };
 
@@ -69,11 +69,11 @@ const dislikeCard = (req, res) => {
     .then((card) => { res.send(card) })
     .catch((err) => {
       if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Переданы некорректные данные для постановки лайка' });
+        res.status(400).send({ message: 'Переданы некорректные данные' });
         return
       }
       if (err.name === 'DocumentNotFoundError') {
-        res.status(404).send({ message: 'Передан несуществующий id карточки' });
+        res.status(404).send({ message: 'Несуществующий id карточки' });
         return
       }
       res.status(500).send({ message: 'Ошибка сервера' });

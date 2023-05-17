@@ -4,7 +4,7 @@ const User = require('../models/user');
 
 const getUsers = (req, res) => {
   User.find({})
-    .then((users) => res.status(http2.constants.HTTP_STATUS_CREATED).send(users))
+    .then((users) => res.send(users))
     .catch(() => res.status(http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка сервера' }));
 };
 

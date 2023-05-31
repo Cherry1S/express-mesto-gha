@@ -13,7 +13,7 @@
     "type": "git",
     "url": "git+https://github.com/Cherry1S/express-mesto-gha.git"
   },
-  "author": "",
+  "author": "Igor Shatrov",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/Cherry1S/express-mesto-gha/issues"

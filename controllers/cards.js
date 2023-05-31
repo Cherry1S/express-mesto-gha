@@ -1,49 +1,59 @@
 const http2 = require('node:http2');
 const mongoose = require('mongoose');
 const Card = require('../models/card');
+const ForbiddenError = require('../errors/ForbiddenError');
+const BadRequestError = require('../errors/BadRequestError');
+const NotFoundError = require('../errors/NotFoundError');
 
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   Card.find({})
     .then((cards) => {
       res.send(cards);
     })
-    .catch(() => res.status(http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка сервера' }));
+    .catch(next);
 };
 
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const owner = req.user._id;
   const { name, link } = req.body;
   Card.create({ name, link, owner })
     .then((card) => { res.status(http2.constants.HTTP_STATUS_CREATED).send(card); })
     .catch((err) => {
       if (err instanceof mongoose.Error.ValidationError) {
-        res.status(http2.constants.HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные' });
+        next(new BadRequestError('Переданы некорректные данные'));
         return;
       }
-      res.status(http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка сервера' });
+      next(err);
     });
 };
 
-const deleteCard = (req, res) => {
-  Card.findByIdAndRemove(req.params.cardId)
+const deleteCard = (req, res, next) => {
+  Card.findById(req.params.cardId)
     .orFail()
     .then((card) => {
-      res.send(card);
+      if (card.owner.toString() !== req.user._id) {
+        next(new ForbiddenError('Доступ ограничен'));
+        return;
+      }
+      Card.findByIdAndRemove(req.params.cardId)
+        .then((removedCard) => {
+          res.send(removedCard);
+        });
     })
     .catch((err) => {
       if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        res.status(http2.constants.HTTP_STATUS_NOT_FOUND).send({ message: 'Карточка не найдена' });
+        next(new NotFoundError('Карточка не найдена'));
         return;
       }
       if (err instanceof mongoose.Error.CastError) {
-        res.status(http2.constants.HTTP_STATUS_BAD_REQUEST).send({ message: 'Передан некорректный id' });
+        next(new BadRequestError('Передан некорректный id'));
         return;
       }
-      res.status(http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка сервера' });
+      next(err);
     });
 };
 
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $addToSet: { likes: req.user._id } },
@@ -53,18 +63,18 @@ const likeCard = (req, res) => {
     .then((card) => { res.send(card); })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(http2.constants.HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные' });
+        next(new BadRequestError('Переданы некорректные данные'));
         return;
       }
       if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        res.status(http2.constants.HTTP_STATUS_NOT_FOUND).send({ message: 'Карточка не найдена' });
+        next(new NotFoundError('Карточка не найдена'));
         return;
       }
-      res.status(http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка сервера' });
+      next(err);
     });
 };
 
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   Card.findByIdAndUpdate(
     req.params.cardId,
     { $pull: { likes: req.user._id } },
@@ -74,14 +84,14 @@ const dislikeCard = (req, res) => {
     .then((card) => { res.send(card); })
     .catch((err) => {
       if (err instanceof mongoose.Error.CastError) {
-        res.status(http2.constants.HTTP_STATUS_BAD_REQUEST).send({ message: 'Переданы некорректные данные' });
+        next(new BadRequestError('Переданы некорректные данные'));
         return;
       }
       if (err instanceof mongoose.Error.DocumentNotFoundError) {
-        res.status(http2.constants.HTTP_STATUS_NOT_FOUND).send({ message: 'Несуществующий id карточки' });
+        next(new NotFoundError('Несуществующий id карточки'));
         return;
       }
-      res.status(http2.constants.HTTP_STATUS_INTERNAL_SERVER_ERROR).send({ message: 'Ошибка сервера' });
+      next(err);
     });
 };
 

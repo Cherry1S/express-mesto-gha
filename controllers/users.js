@@ -9,11 +9,12 @@ const UnauthorizedError = require('../errors/UnauthorizedError');
 
 const login = (req, res, next) => {
   const { email, password } = req.body;
+  const { JWT_SECRET = 'super-strong-secret' } = process.env;
 
   User.findUserByCredentials(email, password)
     .then((user) => {
       res.send({
-        token: jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' }),
+        token: jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' }),
       });
     })
     .catch(() => next(new UnauthorizedError('Неправильные почта или пароль')));

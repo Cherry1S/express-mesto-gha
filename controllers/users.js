@@ -7,9 +7,10 @@ const ConflictError = require('../errors/ConflictError');
 const NotFoundError = require('../errors/NotFoundError');
 const UnauthorizedError = require('../errors/UnauthorizedError');
 
+const { JWT_SECRET = 'super-strong-secret' } = process.env;
+
 const login = (req, res, next) => {
   const { email, password } = req.body;
-  const { JWT_SECRET = 'super-strong-secret' } = process.env;
 
   User.findUserByCredentials(email, password)
     .then((user) => {
